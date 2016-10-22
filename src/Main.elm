@@ -3,21 +3,23 @@ module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import Html.App exposing (beginnerProgram)
+import Html.App as App
 import Matrix exposing (..)
 import Matrix.Extra exposing (..)
 import Array
+import Time exposing (Time, second)
 
 
 -- # Main
+-- main : App.program
 
 
-main : Program Never
 main =
-    beginnerProgram
-        { model = initBar
+    App.program
+        { init = initBar
         , view = view
         , update = update
+        , subscriptions = subscriptions
         }
 
 
@@ -34,7 +36,7 @@ type alias Model =
 
 
 init =
-    { isOn = Matrix.repeat 6 5 True }
+    { isOn = Matrix.repeat 6 5 False }
 
 
 initBar =
@@ -43,13 +45,13 @@ initBar =
             Matrix.indexedMap
                 (\x y value ->
                     if x == 0 || x == 2 then
-                        False
-                    else
                         True
+                    else
+                        False
                 )
                 init.isOn
     in
-        { isOn = x }
+        ( { isOn = x }, Cmd.none )
 
 
 isSolved : Model -> Bool
@@ -65,7 +67,9 @@ isSolved model =
 
 type Msg
     = Toggle LightIndex
+    | Step
     | Restart
+    | Tick Time
 
 
 type alias LightIndex =
@@ -76,18 +80,41 @@ type alias LightIndex =
 -- # Update
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
         Toggle index ->
-            { model | isOn = toggleLights index model.isOn }
+            ( { model | isOn = toggleLights index model.isOn }, Cmd.none )
+
+        Step ->
+            ( { model | isOn = step model.isOn }, Cmd.none )
+
+        Tick time ->
+            ( { model | isOn = step model.isOn }, Cmd.none )
 
         Restart ->
-            init
+            ( init, Cmd.none )
 
 
 toggleLights : LightIndex -> Matrix Bool -> Matrix Bool
-toggleLights index isOn =
+toggleLights index cells =
+    Matrix.indexedMap
+        (\x y cell ->
+            if x == index.x && y == index.y then
+                not cell
+            else
+                cell
+        )
+        cells
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Time.every second Tick
+
+
+step : Matrix Bool -> Matrix Bool
+step isOn =
     Matrix.indexedMap
         (\x y value ->
             let
@@ -139,6 +166,9 @@ view model =
         , Html.button
             [ onClick Restart ]
             [ text "Restart" ]
+        , Html.button
+            [ onClick Step ]
+            [ text "Step" ]
         , hr [] []
         , div []
             [ model.isOn
