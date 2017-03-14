@@ -28,7 +28,7 @@ main =
 
 
 type alias Model =
-    { isOn : Matrix Bool }
+    { isOn : Matrix Bool, started : Bool }
 
 
 
@@ -36,7 +36,7 @@ type alias Model =
 
 
 init =
-    { isOn = Matrix.repeat 6 5 False }
+    { isOn = Matrix.repeat 6 5 False, started = False }
 
 
 initBar =
@@ -51,7 +51,7 @@ initBar =
                 )
                 init.isOn
     in
-        ( { isOn = x }, Cmd.none )
+        ( { isOn = x, started = False }, Cmd.none )
 
 
 isSolved : Model -> Bool
@@ -70,6 +70,8 @@ type Msg
     | Step
     | Restart
     | Tick Time
+    | Start
+    | Pause
 
 
 type alias LightIndex =
@@ -84,7 +86,7 @@ update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
         Toggle index ->
-            ( { model | isOn = toggleLights index model.isOn }, Cmd.none )
+            ( { model | isOn = toggleLights index model.isOn, started = False }, Cmd.none )
 
         Step ->
             ( { model | isOn = step model.isOn }, Cmd.none )
@@ -93,7 +95,13 @@ update msg model =
             ( { model | isOn = step model.isOn }, Cmd.none )
 
         Restart ->
-            ( init, Cmd.none )
+            initBar
+
+        Start ->
+            ( { model | started = True }, Cmd.none )
+
+        Pause ->
+            ( { model | started = False }, Cmd.none )
 
 
 toggleLights : LightIndex -> Matrix Bool -> Matrix Bool
@@ -110,7 +118,10 @@ toggleLights index cells =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every second Tick
+    if model.started then
+        Time.every second Tick
+    else
+        Sub.none
 
 
 step : Matrix Bool -> Matrix Bool
@@ -124,8 +135,8 @@ step isOn =
                 live_ns =
                     List.foldr oneiftrue 0 ns
 
-                _ =
-                    Debug.log "live_ns" live_ns
+                -- _ =
+                -- Debug.log "live_ns" live_ns
             in
                 if value then
                     if live_ns == 2 || live_ns == 3 then
@@ -166,6 +177,9 @@ view model =
         , Html.button
             [ onClick Restart ]
             [ text "Restart" ]
+        , Html.text " "
+        , start_pause model
+        , Html.text "  "
         , Html.button
             [ onClick Step ]
             [ text "Step" ]
@@ -175,6 +189,18 @@ view model =
                 |> Matrix.Extra.prettyPrint
             ]
         ]
+
+
+start_pause : Model -> Html Msg
+start_pause model =
+    if model.started then
+        Html.button
+            [ onClick Pause ]
+            [ text "Pause" ]
+    else
+        Html.button
+            [ onClick Start ]
+            [ text "Start" ]
 
 
 winScreen : Model -> Html Msg
