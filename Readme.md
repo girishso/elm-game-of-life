@@ -1,5 +1,6 @@
 # Game of Life in ELM!
 
+[Demo](https://girishso.github.io/elm-game-of-life/public/)
 
 ## Quickstart
 
