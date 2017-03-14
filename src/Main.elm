@@ -36,7 +36,7 @@ type alias Model =
 
 
 init =
-    { isOn = Matrix.repeat 6 5 False, started = False }
+    { isOn = Matrix.repeat 12 11 False, started = True }
 
 
 initBar =
@@ -44,14 +44,20 @@ initBar =
         x =
             Matrix.indexedMap
                 (\x y value ->
-                    if x == 0 || x == 2 then
+                    if
+                        (x == 6 && y == 3)
+                            || (x == 6 && y == 4)
+                            || (x == 6 && y == 5)
+                            || (x == 5 && y == 4)
+                            || (x == 7 && y == 4)
+                    then
                         True
                     else
                         False
                 )
                 init.isOn
     in
-        ( { isOn = x, started = False }, Cmd.none )
+        ( { isOn = x, started = True }, Cmd.none )
 
 
 isSolved : Model -> Bool
@@ -169,11 +175,8 @@ oneiftrue flag sum =
 view : Model -> Html Msg
 view model =
     div [ class "container" ]
-        [ model.isOn
-            |> Matrix.indexedMap btn
-            |> toDivs
-        , winScreen model
-        , hr [] []
+        [ h2 [] [ text "Game Of Life in ELM" ]
+        , p [ class "quiet" ] [ text "Click on the cells to toggle and press 'Start' to start simulation." ]
         , Html.button
             [ onClick Restart ]
             [ text "Restart" ]
@@ -183,6 +186,10 @@ view model =
         , Html.button
             [ onClick Step ]
             [ text "Step" ]
+        , hr [] []
+        , model.isOn
+            |> Matrix.indexedMap btn
+            |> toDivs
         , hr [] []
         , div []
             [ model.isOn
@@ -195,21 +202,26 @@ start_pause : Model -> Html Msg
 start_pause model =
     if model.started then
         Html.button
-            [ onClick Pause ]
+            [ style
+                [ ( "background-color", "red" )
+                , ( "color", "white" )
+                , ( "font-style", "bold" )
+                , ( "display", "inline-block" )
+                ]
+            , onClick Pause
+            ]
             [ text "Pause" ]
     else
         Html.button
-            [ onClick Start ]
+            [ style
+                [ ( "background-color", "green" )
+                , ( "color", "white" )
+                , ( "font-style", "bold" )
+                , ( "display", "inline-block" )
+                ]
+            , onClick Start
+            ]
             [ text "Start" ]
-
-
-winScreen : Model -> Html Msg
-winScreen model =
-    if isSolved model then
-        h1 []
-            [ text "Win!!" ]
-    else
-        div [] []
 
 
 toDivs : Matrix (Html Msg) -> Html Msg
@@ -235,14 +247,13 @@ btn ix iy isOn =
         [ style
             [ ( "background-color"
               , if isOn then
-                    "orange"
+                    "black"
                 else
                     "grey"
               )
-            , ( "width", "80px" )
-            , ( "height", "80px" )
-            , ( "margin", "2px" )
-            , ( "border-radius", "10px" )
+            , ( "width", "40px" )
+            , ( "height", "40px" )
+            , ( "margin", "1px" )
             , ( "display", "inline-block" )
             ]
         , onClick (Toggle { x = ix, y = iy })
